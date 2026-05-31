@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
@@ -39,6 +39,173 @@ function cx(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
+function GlobalLayoutFix() {
+  useEffect(() => {
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "viewport");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover");
+  }, []);
+
+  return (
+    <style>{`
+      html, body, #root {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        position: relative;
+      }
+
+      @media (max-width: 700px) {
+        html, body, #root {
+          width: 100vw;
+          max-width: 100vw;
+          overflow-x: hidden;
+        }
+
+        #root {
+          display: block;
+        }
+
+        .skinbox-shell {
+          width: 100vw;
+          max-width: 100vw;
+          overflow-x: hidden;
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+
+        .skinbox-content {
+          width: 100%;
+          max-width: calc(100vw - 24px);
+          margin-left: 0;
+          margin-right: 0;
+          overflow-x: hidden;
+        }
+
+        .phone-card,
+        .mobile-safe {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          overflow-x: hidden;
+        }
+
+        .mobile-safe * {
+          min-width: 0;
+        }
+
+        .case-viewport {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow: hidden !important;
+        }
+
+        .case-track {
+          width: max-content !important;
+          max-width: none !important;
+        }
+
+        .phone-stack {
+          display: flex !important;
+          flex-direction: column !important;
+        }
+
+        .phone-full {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+      }
+
+
+      /* Hard mobile layout reset: entering the player screen adds wide reel/table/button content,
+         so every page-level container must be constrained to the visual viewport. */
+      @media (max-width: 700px) {
+        html, body, #root {
+          width: 100dvw !important;
+          max-width: 100dvw !important;
+          min-width: 0 !important;
+          overflow-x: hidden !important;
+          overscroll-behavior-x: none;
+        }
+
+        .skinbox-shell {
+          display: block !important;
+          width: 100dvw !important;
+          max-width: 100dvw !important;
+          min-width: 0 !important;
+          overflow-x: clip !important;
+          padding: 12px !important;
+        }
+
+        .skinbox-content {
+          display: flex !important;
+          flex-direction: column !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          margin: 0 !important;
+          overflow: clip !important;
+        }
+
+        .phone-card,
+        .mobile-safe {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+        }
+
+        .phone-card,
+        .mobile-safe {
+          overflow: clip !important;
+        }
+
+        .case-viewport {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          overflow: hidden !important;
+          contain: layout paint size;
+        }
+
+        .case-track {
+          width: max-content !important;
+          max-width: none !important;
+          min-width: 0 !important;
+          will-change: transform;
+        }
+
+        .phone-stack {
+          display: flex !important;
+          flex-direction: column !important;
+        }
+
+        .phone-full {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+
+        table {
+          max-width: 100%;
+        }
+      }
+    `}</style>
+  );
+}
+
 function Button({ children, className = "", variant = "default", disabled = false, ...props }) {
   const variantClass =
     variant === "secondary"
@@ -53,7 +220,7 @@ function Button({ children, className = "", variant = "default", disabled = fals
     <button
       disabled={disabled}
       className={cx(
-        "inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex max-w-full items-center justify-center whitespace-normal break-words rounded-xl px-4 py-2 text-center font-semibold transition disabled:cursor-not-allowed disabled:opacity-50",
         variantClass,
         className
       )}
@@ -312,7 +479,8 @@ export default function SkinBoxSocialApp() {
   }, []);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#1d4ed8_0%,#2e1065_34%,#070716_100%)] px-4 py-6 text-white">
+    <main className="skinbox-shell mobile-safe min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[radial-gradient(circle_at_top,#1d4ed8_0%,#2e1065_34%,#070716_100%)] px-3 py-4 text-white sm:w-full sm:px-4 sm:py-6">
+      <GlobalLayoutFix />
       <AnimatedBackground />
       {route === "admin" ? <AdminPage /> : <PlayerPage />}
     </main>
@@ -567,17 +735,17 @@ function PlayerPage() {
   }
 
   return (
-    <section className="relative mx-auto grid max-w-7xl gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-      <div className="space-y-4">
+    <section className="skinbox-content mobile-safe relative mx-0 flex w-full max-w-full min-w-0 flex-col gap-4 overflow-hidden sm:mx-auto xl:grid xl:max-w-7xl xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="mobile-safe min-w-0 space-y-4">
         <HeroCard coins={player?.coins ?? STARTING_COINS} socialScore={socialScore} />
 
         {!player ? (
-          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="phone-card mobile-safe w-full max-w-full min-w-0 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
             <div className="mb-4 flex items-center gap-3">
               <div className="rounded-2xl bg-white/15 p-3"><UserRound className="h-6 w-6" /></div>
               <div>
                 <h2 className="text-2xl font-bold">建立玩家</h2>
-                <p className="text-sm text-violet-100">輸入名稱後，金幣與造型庫會同步到 Firebase。</p>
+                <p className="min-w-0 break-words text-sm text-violet-100">輸入名稱後，金幣與造型庫會同步到 Firebase。</p>
               </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -586,7 +754,7 @@ function PlayerPage() {
             </div>
           </motion.div>
         ) : (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="phone-card mobile-safe w-full max-w-full min-w-0 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm text-violet-100">目前玩家</p>
@@ -600,18 +768,18 @@ function PlayerPage() {
             <SkinCase reelItems={reelItems} reelX={reelX} reelShouldAnimate={reelShouldAnimate} isOpening={isOpening} result={result} nearMiss={nearMiss} />
 
             <div className="mt-5 space-y-4">
-              <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-                <div className="text-sm text-violet-100">
+              <div className="flex min-w-0 flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 break-words text-sm leading-6 text-violet-100">
                   每次付費開箱花費 <span className="font-bold text-yellow-200">{CASE_COST}</span> 金幣。每開 <span className="font-bold text-cyan-100">{FREE_CASE_EVERY}</span> 次付費箱，獲得 1 張免費開箱券。
                   {shortForNextCase > 0 && <span className="ml-1 text-yellow-100">距離下一次開箱只差 {shortForNextCase} 金幣。</span>}
                 </div>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row">
                   {freeTickets > 0 && (
-                    <Button onClick={() => openCase(true)} disabled={!canOpenFree} variant="secondary" className="min-h-14 rounded-2xl px-6 text-base font-black">
+                    <Button onClick={() => openCase(true)} disabled={!canOpenFree} variant="secondary" className="min-h-14 w-full rounded-2xl px-6 text-base font-black sm:w-auto">
                       <Gift className="mr-2 h-5 w-5" />使用免費券 × {freeTickets}
                     </Button>
                   )}
-                  <Button onClick={() => openCase(false)} disabled={!canOpenPaid} className="min-h-14 rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-500 px-8 text-lg font-black text-slate-950 shadow-lg transition hover:scale-[1.02]">
+                  <Button onClick={() => openCase(false)} disabled={!canOpenPaid} className="min-h-14 w-full rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-500 px-5 text-base font-black text-slate-950 shadow-lg transition hover:scale-[1.02] sm:w-auto sm:px-8 sm:text-lg">
                     <PackageOpen className="mr-2 h-5 w-5" />{isOpening ? "開箱中..." : `花 ${CASE_COST} 金幣開箱`}
                   </Button>
                 </div>
@@ -636,15 +804,23 @@ function PlayerPage() {
             </div>
 
             <ResultSummary result={result} isOpening={isOpening} />
-            <div className="mt-4">
-              <PlayerStatsCard player={player} inventory={inventory} inventoryValue={inventoryValue} socialScore={socialScore} />
-            </div>
+          </motion.div>
+        )}
+
+        {player && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="phone-card mobile-safe hidden w-full max-w-full min-w-0 overflow-hidden xl:block">
+            <PlayerStatsCard player={player} inventory={inventory} inventoryValue={inventoryValue} socialScore={socialScore} />
           </motion.div>
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="mobile-safe min-w-0 space-y-4 xl:max-w-[320px]">
         <InventoryCard inventory={inventory} sellOne={sellOne} sellAllLowValue={sellAllLowValue} hasSellableItems={hasSellableItems} />
+        {player && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="phone-card mobile-safe w-full max-w-full min-w-0 overflow-hidden xl:hidden">
+            <PlayerStatsCard player={player} inventory={inventory} inventoryValue={inventoryValue} socialScore={socialScore} />
+          </motion.div>
+        )}
         <HistoryCard history={player?.history || []} />
         <a href="#admin" className="block rounded-2xl border border-white/15 bg-white/10 p-4 text-center text-sm text-violet-100 backdrop-blur-xl hover:bg-white/15">前往管理員統計頁</a>
       </div>
@@ -713,8 +889,8 @@ function AdminPage() {
   if (!authed) {
     return (
       <section className="relative mx-auto max-w-lg pt-16">
-        <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
-          <CardContent className="p-6">
+        <Card className="phone-card rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
+          <CardContent className="p-4 sm:p-6">
             <div className="mb-4 flex items-center gap-3"><Lock className="h-8 w-8" /><div><h1 className="text-2xl font-black">管理員統計頁</h1><p className="text-sm text-violet-100">輸入 PIN 後查看即時資料。</p></div></div>
             <input value={pin} onChange={(e) => setPin(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setAuthed(pin === ADMIN_PIN)} placeholder="管理員 PIN" type="password" className="mb-3 min-h-12 w-full rounded-2xl border border-white/20 bg-white/90 px-4 text-slate-900 outline-none" />
             <Button onClick={() => setAuthed(pin === ADMIN_PIN)} className="w-full rounded-2xl font-bold">進入管理頁</Button>
@@ -727,8 +903,8 @@ function AdminPage() {
 
   return (
     <section className="relative mx-auto max-w-7xl space-y-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="phone-card mobile-safe w-full max-w-full min-w-0 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
+        <div className="phone-stack flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm text-violet-100"><BarChart3 className="h-4 w-4" />Live SkinBox Dashboard</div>
             <h1 className="text-3xl font-black sm:text-5xl">管理員統計頁</h1>
@@ -761,8 +937,8 @@ function AdminPage() {
         {rarityList.map((rarity) => <RarityTotalCard key={rarity.id} rarity={rarity} count={summary.totals[rarity.id]} />)}
       </div>
 
-      <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
-        <CardContent className="p-6">
+      <Card className="phone-card rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
+        <CardContent className="p-4 sm:p-6">
           <h2 className="mb-4 text-2xl font-black">完整社交分數排行榜</h2>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] text-left text-sm">
@@ -795,16 +971,16 @@ function AdminPage() {
 
 function HeroCard({ coins, socialScore }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
+    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="phone-card mobile-safe w-full max-w-full min-w-0 overflow-hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm text-violet-100"><Sparkles className="h-4 w-4" />SkinBox Simulator</div>
-          <h1 className="text-3xl font-black tracking-tight sm:text-5xl">造型開箱模擬器</h1>
+          <h1 className="break-words text-3xl font-black tracking-tight sm:text-5xl">造型開箱模擬器</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-violet-100 sm:text-base">抽造型、賣低價物、保留高社交價值造型。最後社交分數最高者獲勝。</p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <motion.div className="rounded-3xl border border-yellow-300/30 bg-yellow-300/15 px-5 py-4 text-right shadow-lg" animate={{ y: [0, -4, 0] }} transition={{ duration: 2.2, repeat: Infinity }}><div className="text-sm text-yellow-100">目前金幣</div><div className="flex items-center gap-2 text-3xl font-black text-yellow-200"><Coins className="h-7 w-7" />{coins}</div></motion.div>
-          <motion.div className="rounded-3xl border border-cyan-300/30 bg-cyan-300/15 px-5 py-4 text-right shadow-lg" animate={{ y: [0, -5, 0] }} transition={{ duration: 2.9, repeat: Infinity }}><div className="text-sm text-cyan-100">社交分數</div><div className="flex items-center gap-2 text-3xl font-black text-cyan-100"><Sparkles className="h-7 w-7" />{socialScore}</div></motion.div>
+        <div className="phone-full flex w-full flex-wrap gap-3 sm:w-auto">
+          <motion.div className="phone-full rounded-3xl border border-yellow-300/30 bg-yellow-300/15 px-5 py-4 text-left shadow-lg sm:text-right" animate={{ y: [0, -4, 0] }} transition={{ duration: 2.2, repeat: Infinity }}><div className="text-sm text-yellow-100">目前金幣</div><div className="flex items-center gap-2 text-3xl font-black text-yellow-200"><Coins className="h-7 w-7" />{coins}</div></motion.div>
+          <motion.div className="phone-full rounded-3xl border border-cyan-300/30 bg-cyan-300/15 px-5 py-4 text-left shadow-lg sm:text-right" animate={{ y: [0, -5, 0] }} transition={{ duration: 2.9, repeat: Infinity }}><div className="text-sm text-cyan-100">社交分數</div><div className="flex items-center gap-2 text-3xl font-black text-cyan-100"><Sparkles className="h-7 w-7" />{socialScore}</div></motion.div>
         </div>
       </div>
     </motion.div>
@@ -813,36 +989,74 @@ function HeroCard({ coins, socialScore }) {
 
 function SkinCase({ reelItems, reelX, reelShouldAnimate, isOpening, result, nearMiss }) {
   const focus = result || reelItems[CENTER_INDEX] || RARITIES.white;
+  const viewportRef = useRef(null);
+  const [viewportWidth, setViewportWidth] = useState(0);
+
+  useEffect(() => {
+    if (!viewportRef.current) return;
+    const updateWidth = () => setViewportWidth(viewportRef.current?.clientWidth || 0);
+    updateWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateWidth);
+      return () => window.removeEventListener("resize", updateWidth);
+    }
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(viewportRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const isCompact = viewportWidth > 0 && viewportWidth < 520;
+  const itemWidth = isCompact ? 54 : 104;
+  const itemGap = isCompact ? 6 : REEL_GAP;
+  const reelStep = itemWidth + itemGap;
+
+  // 核心修正：
+  // 黃色中線在 viewport 的正中央；真正中獎格固定是 REEL_FINAL_INDEX。
+  // 因此最後位移必須用實際 viewportWidth 計算，而不是假設中線永遠在 500px。
+  const finalX = viewportWidth
+    ? viewportWidth / 2 - itemWidth / 2 - REEL_FINAL_INDEX * reelStep
+    : 0;
+
+  // 未開箱時讓第 CENTER_INDEX 張落在中線；開箱時滑到 REEL_FINAL_INDEX。
+  // 不再用 x=0，避免手機版看到軌道從左邊切出、撐寬或看起來跑版。
+  const idleX = viewportWidth
+    ? viewportWidth / 2 - itemWidth / 2 - CENTER_INDEX * reelStep
+    : 0;
+  const targetX = reelShouldAnimate || result ? finalX : idleX;
 
   return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-white/20 bg-slate-950/70 p-5 shadow-inner">
+    <div className="phone-card mobile-safe relative w-full max-w-full min-w-0 overflow-hidden rounded-[1.5rem] border border-white/20 bg-slate-950/70 p-3 shadow-inner sm:rounded-[2rem] sm:p-5">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.16),transparent_55%)]" />
       <div className="absolute bottom-0 left-0 right-0 top-0 bg-gradient-to-r from-slate-950 via-transparent to-slate-950 opacity-70" />
-      <motion.div className="absolute left-1/2 top-0 z-30 h-full w-1 -translate-x-1/2 bg-yellow-300 shadow-lg shadow-yellow-300/80" animate={{ opacity: isOpening ? [0.3, 1, 0.3] : 0.9 }} transition={{ duration: 0.35, repeat: isOpening ? Infinity : 0 }} />
-
-      <div className="relative z-20 mb-4 flex items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-bold text-violet-100">SkinBox Case Opening</div>
-          <div className="text-xs text-violet-200">造型軌道由右往左滑動，只有停在中間線上的造型會被獲得。</div>
+      <div className="relative z-20 mb-3 flex flex-wrap items-start justify-between gap-2 sm:mb-4">
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-violet-100 sm:text-base">SkinBox Case Opening</div>
+          <div className="max-w-full break-words text-xs leading-5 text-violet-200 sm:text-sm">造型軌道由右往左滑動，只有停在中間線上的造型會被獲得。</div>
         </div>
-        <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-yellow-100">
+        <div className="shrink-0 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-yellow-100">
           {isOpening ? "滑動中..." : result ? `獲得 ${result.colorName}` : "等待開箱"}
         </div>
       </div>
 
-      <div className="relative z-20 mx-auto max-w-[1000px] overflow-hidden px-1 py-4">
+      <div ref={viewportRef} className="case-viewport relative z-20 mx-auto h-[150px] w-full min-w-0 max-w-full overflow-hidden px-0 py-2 sm:h-[245px] sm:max-w-[1000px] sm:py-4">
         <motion.div
-          className="flex items-center"
-          style={{ gap: REEL_GAP }}
-          animate={{ x: reelX }}
-          transition={reelShouldAnimate ? { duration: REEL_SPIN_DURATION, ease: [0.18, 0.02, 0.18, 1] } : { duration: 0 }}
+          className="pointer-events-none absolute left-1/2 top-2 z-30 h-[calc(100%-1rem)] w-1 -translate-x-1/2 bg-yellow-300 shadow-lg shadow-yellow-300/80"
+          animate={{ opacity: isOpening ? [0.3, 1, 0.3] : 0.9 }}
+          transition={{ duration: 0.35, repeat: isOpening ? Infinity : 0 }}
+        />
+        <motion.div
+          className="case-track absolute left-0 top-1/2 flex -translate-y-1/2 items-center"
+          style={{ gap: itemGap }}
+          animate={{ x: targetX }}
+          transition={reelShouldAnimate ? { duration: REEL_SPIN_DURATION, ease: [0.12, 0.78, 0.16, 1] } : { duration: 0 }}
         >
           {reelItems.map((item, index) => {
             const isWinningSlot = !isOpening && result && index === REEL_FINAL_INDEX;
-            const isCurrentCenter = !isOpening && (index === REEL_FINAL_INDEX || index === CENTER_INDEX);
             const distance = Math.abs(index - REEL_FINAL_INDEX);
-            const opacity = isOpening ? 0.95 : distance <= 1 ? 1 : distance <= 3 ? 0.78 : 0.55;
-            const scale = isWinningSlot ? 1.14 : isOpening ? 0.95 : distance === 1 ? 0.98 : 0.88;
+            const opacity = isOpening ? 0.95 : isWinningSlot ? 1 : distance <= 1 ? 0.92 : distance <= 3 ? 0.78 : 0.62;
+            const scale = isWinningSlot ? 1.12 : isOpening ? 0.96 : distance <= 1 ? 0.96 : 0.88;
 
             return (
               <motion.div
@@ -850,21 +1064,21 @@ function SkinCase({ reelItems, reelX, reelShouldAnimate, isOpening, result, near
                 animate={{ opacity, scale }}
                 transition={{ duration: 0.25 }}
                 className={cx(
-                  "relative flex aspect-[0.75] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[1.2rem] border text-2xl shadow-2xl sm:text-4xl",
+                  "relative flex aspect-[0.75] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[1rem] border text-xl shadow-2xl sm:rounded-[1.2rem] sm:text-4xl",
                   item.bg,
                   item.text,
                   item.border,
                   item.glow,
-                  isWinningSlot || isCurrentCenter ? "z-20 ring-4 ring-yellow-300/80" : ""
+                  isWinningSlot ? "z-20 ring-4 ring-yellow-300/80" : ""
                 )}
-                style={{ width: REEL_ITEM_WIDTH }}
+                style={{ width: itemWidth }}
               >
-                {(isWinningSlot || isCurrentCenter) && <motion.div className="absolute inset-0 bg-white/20" animate={{ opacity: [0.15, 0.45, 0.15] }} transition={{ duration: 0.7, repeat: Infinity }} />}
+                {isWinningSlot && <motion.div className="absolute inset-0 bg-white/20" animate={{ opacity: [0.15, 0.45, 0.15] }} transition={{ duration: 0.7, repeat: Infinity }} />}
                 {item.id === "gold" && <motion.div className="absolute inset-0 bg-gradient-to-br from-white/60 via-yellow-200/10 to-transparent" animate={{ x: ["-100%", "120%"] }} transition={{ duration: 1.2, repeat: Infinity }} />}
                 {item.id === "red" && <motion.div className="absolute inset-0 bg-rose-300/20" animate={{ opacity: [0.12, 0.45, 0.12] }} transition={{ duration: 0.7, repeat: Infinity }} />}
-                <span className="relative drop-shadow-lg">{item.emoji}</span>
-                <span className="relative mt-2 text-[10px] font-black sm:text-xs">{item.shortName}</span>
-                {(isWinningSlot || isCurrentCenter) && <span className="relative mt-1 rounded-full bg-black/20 px-2 py-0.5 text-[10px] font-bold">獲得</span>}
+                <span className="relative text-2xl drop-shadow-lg sm:text-4xl">{item.emoji}</span>
+                <span className="relative mt-1 text-[10px] font-black sm:mt-2 sm:text-xs">{item.shortName}</span>
+                {isWinningSlot && <span className="relative mt-1 rounded-full bg-black/20 px-2 py-0.5 text-[9px] font-bold sm:text-[10px]">獲得</span>}
               </motion.div>
             );
           })}
@@ -873,18 +1087,18 @@ function SkinCase({ reelItems, reelX, reelShouldAnimate, isOpening, result, near
 
       <AnimatePresence>
         {!isOpening && result && (
-          <motion.div initial={{ opacity: 0, y: 20, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} className={cx("relative z-30 mt-5 rounded-[1.5rem] border p-4 shadow-2xl", focus.border, focus.id === "gold" ? "bg-yellow-300/20" : focus.id === "red" ? "bg-rose-500/20" : "bg-white/10")}>
+          <motion.div initial={{ opacity: 0, y: 20, scale: 0.92 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} className={cx("relative z-30 mt-3 rounded-[1.5rem] border p-3 shadow-2xl sm:mt-5 sm:p-4", focus.border, focus.id === "gold" ? "bg-yellow-300/20" : focus.id === "red" ? "bg-rose-500/20" : "bg-white/10")}>
             {focus.id === "gold" && <motion.div className="pointer-events-none fixed inset-0 z-40 bg-yellow-300/20" initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.2 }} />}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <motion.div className="text-6xl" animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.25, 1] }} transition={{ duration: 0.8 }}>{focus.emoji}</motion.div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <motion.div className="shrink-0 text-5xl sm:text-6xl" animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.25, 1] }} transition={{ duration: 0.8 }}>{focus.emoji}</motion.div>
                 <div>
                   <div className="text-sm font-bold text-violet-100">你獲得了</div>
-                  <div className="text-2xl font-black sm:text-3xl">{focus.name}</div>
-                  <div className="mt-1 text-sm text-violet-100">{focus.marketLabel}｜社交分數 +{focus.socialValue}</div>
+                  <div className="break-words text-xl font-black sm:text-3xl">{focus.name}</div>
+                  <div className="mt-1 text-xs text-violet-100 sm:text-sm">{focus.marketLabel}｜社交分數 +{focus.socialValue}</div>
                 </div>
               </div>
-              <div className="rounded-2xl bg-white/10 p-3 text-right">
+              <div className="rounded-2xl bg-white/10 p-3 text-left sm:text-right">
                 <div className="text-xs text-violet-100">市場狀態</div>
                 <div className="text-lg font-black text-yellow-100">{focus.sellable ? `${focus.sellPrice} 金幣` : "有價無市"}</div>
                 <div className="text-xs text-violet-100">{focus.sellable ? "可出售換金幣，但會失去社交分數" : "不可出售，只能展示"}</div>
@@ -914,14 +1128,14 @@ function ResultSummary({ result, isOpening }) {
 
 function PlayerStatsCard({ player, inventory, inventoryValue, socialScore }) {
   return (
-    <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-white/15 p-3"><Trophy className="h-6 w-6" /></div><div><h2 className="text-xl font-black">玩家狀態</h2><p className="text-sm text-violet-100">最後只看社交分數，最高者獲勝。</p></div></div><div className="grid grid-cols-2 gap-3"><MiniMetric label="社交分數" value={socialScore} /><MiniMetric label="開箱次數" value={player?.totalCases || 0} /><MiniMetric label="已投入" value={player?.totalSpent || 0} /><MiniMetric label="已回收" value={player?.totalRecovered || 0} /><MiniMetric label="紅色持有" value={inventory.red} /><MiniMetric label="金色持有" value={inventory.gold} /></div><div className="mt-3 rounded-2xl bg-white/10 p-4 text-sm text-violet-100">可出售庫存估值：<span className="font-bold text-yellow-200">{inventoryValue}</span> 金幣。金色是 <span className="font-bold text-yellow-200">有價無市</span>：不能賣，但有最高社交分數。</div></CardContent></Card>
+    <Card className="phone-card rounded-[2rem] border border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-4 sm:p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-white/15 p-3"><Trophy className="h-6 w-6" /></div><div><h2 className="text-xl font-black">玩家狀態</h2><p className="text-sm text-violet-100">最後只看社交分數，最高者獲勝。</p></div></div><div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"><MiniMetric label="社交分數" value={socialScore} /><MiniMetric label="開箱次數" value={player?.totalCases || 0} /><MiniMetric label="已投入" value={player?.totalSpent || 0} /><MiniMetric label="已回收" value={player?.totalRecovered || 0} /><MiniMetric label="紅色持有" value={inventory.red} /><MiniMetric label="金色持有" value={inventory.gold} /></div><div className="mt-3 rounded-2xl bg-white/10 p-4 text-sm text-violet-100">可出售庫存估值：<span className="font-bold text-yellow-200">{inventoryValue}</span> 金幣。金色是 <span className="font-bold text-yellow-200">有價無市</span>：不能賣，但有最高社交分數。</div></CardContent></Card>
   );
 }
 
 function InventoryCard({ inventory, sellOne, sellAllLowValue, hasSellableItems }) {
   return (
-    <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
-      <CardContent className="p-6">
+    <Card className="phone-card rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
+      <CardContent className="p-4 sm:p-6">
         <div className="mb-4 flex items-center gap-3">
           <div className="shrink-0 rounded-2xl bg-white/15 p-3">
             <Gem className="h-6 w-6" />
@@ -981,17 +1195,17 @@ function InventoryCard({ inventory, sellOne, sellAllLowValue, hasSellableItems }
 
 function HistoryCard({ history }) {
   return (
-    <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-white/15 p-3"><History className="h-6 w-6" /></div><div><h2 className="text-xl font-black">操作紀錄</h2><p className="text-sm text-violet-100">最近 {HISTORY_LIMIT} 筆。</p></div></div><div className="max-h-[360px] space-y-2 overflow-auto pr-1">{history.length === 0 ? <div className="rounded-2xl border border-dashed border-white/25 p-5 text-center text-sm text-violet-100">還沒有紀錄。</div> : history.map((item) => <motion.div key={item.id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} className="flex items-center justify-between rounded-2xl bg-white/10 p-3"><div className="flex items-center gap-3"><div className="text-2xl">{item.emoji}</div><div><div className="font-bold">{item.action === "sell" ? "出售" : "開箱"}：{item.rarityName}</div><div className="text-xs text-violet-100">{item.time}{item.nearMiss ? " · 差一點高價值造型" : ""}{item.isFreeCase ? " · 免費箱" : ""}{item.earnedFreeTicket ? " · 獲得免費券" : ""}</div></div></div><div className="text-right text-xs text-violet-100">{item.socialValue ? `社交 +${item.socialValue}` : item.sellPrice ? `+${item.sellPrice}` : ""}</div></motion.div>)}</div></CardContent></Card>
+    <Card className="phone-card rounded-[2rem] border border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-4 sm:p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-white/15 p-3"><History className="h-6 w-6" /></div><div><h2 className="text-xl font-black">操作紀錄</h2><p className="text-sm text-violet-100">最近 {HISTORY_LIMIT} 筆。</p></div></div><div className="max-h-[360px] space-y-2 overflow-auto pr-1">{history.length === 0 ? <div className="rounded-2xl border border-dashed border-white/25 p-5 text-center text-sm text-violet-100">還沒有紀錄。</div> : history.map((item) => <motion.div key={item.id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} className="flex items-center justify-between rounded-2xl bg-white/10 p-3"><div className="flex items-center gap-3"><div className="text-2xl">{item.emoji}</div><div><div className="font-bold">{item.action === "sell" ? "出售" : "開箱"}：{item.rarityName}</div><div className="text-xs text-violet-100">{item.time}{item.nearMiss ? " · 差一點高價值造型" : ""}{item.isFreeCase ? " · 免費箱" : ""}{item.earnedFreeTicket ? " · 獲得免費券" : ""}</div></div></div><div className="text-right text-xs text-violet-100">{item.socialValue ? `社交 +${item.socialValue}` : item.sellPrice ? `+${item.sellPrice}` : ""}</div></motion.div>)}</div></CardContent></Card>
   );
 }
 
 function PodiumCard({ ranking }) {
   const top = ranking.slice(0, 3);
-  return <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-yellow-300/20 p-3"><Medal className="h-6 w-6 text-yellow-200" /></div><div><h2 className="text-2xl font-black">目前社交分數排行榜</h2><p className="text-sm text-violet-100">同分時依金色、紅色、剩餘金幣、較少開箱排序。</p></div></div><div className="space-y-3">{top.length === 0 ? <div className="rounded-2xl border border-dashed border-white/20 p-5 text-center text-violet-100">尚無玩家。</div> : top.map((p, index) => { const inv = normalizeInventory(p.inventory); return <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={cx("rounded-2xl border p-4", index === 0 ? "border-yellow-300 bg-yellow-300/15" : "border-white/15 bg-white/10")}><div className="flex items-center justify-between gap-3"><div><div className="text-sm text-violet-100">{index === 0 ? "🥇 第一名" : index === 1 ? "🥈 第二名" : "🥉 第三名"}</div><div className="text-2xl font-black">{p.name}</div></div><div className="text-right"><div className="text-3xl font-black text-cyan-100">{calculateSocialScore(inv)}</div><div className="text-xs text-violet-100">金 {inv.gold}｜紅 {inv.red}</div></div></div></motion.div>; })}</div></CardContent></Card>;
+  return <Card className="phone-card rounded-[2rem] border border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-4 sm:p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-yellow-300/20 p-3"><Medal className="h-6 w-6 text-yellow-200" /></div><div><h2 className="text-2xl font-black">目前社交分數排行榜</h2><p className="text-sm text-violet-100">同分時依金色、紅色、剩餘金幣、較少開箱排序。</p></div></div><div className="space-y-3">{top.length === 0 ? <div className="rounded-2xl border border-dashed border-white/20 p-5 text-center text-violet-100">尚無玩家。</div> : top.map((p, index) => { const inv = normalizeInventory(p.inventory); return <motion.div key={p.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={cx("rounded-2xl border p-4", index === 0 ? "border-yellow-300 bg-yellow-300/15" : "border-white/15 bg-white/10")}><div className="flex items-center justify-between gap-3"><div><div className="text-sm text-violet-100">{index === 0 ? "🥇 第一名" : index === 1 ? "🥈 第二名" : "🥉 第三名"}</div><div className="text-2xl font-black">{p.name}</div></div><div className="text-right"><div className="text-3xl font-black text-cyan-100">{calculateSocialScore(inv)}</div><div className="text-xs text-violet-100">金 {inv.gold}｜紅 {inv.red}</div></div></div></motion.div>; })}</div></CardContent></Card>;
 }
 
 function ShowcaseCard({ players }) {
-  return <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-rose-400/20 p-3"><Flame className="h-6 w-6 text-rose-200" /></div><div><h2 className="text-2xl font-black">高社交價值展示牆</h2><p className="text-sm text-violet-100">請持有金色或紅色造型的玩家在大家面前展示。</p></div></div><div className="grid gap-3 sm:grid-cols-2">{players.length === 0 ? <div className="rounded-2xl border border-dashed border-white/20 p-5 text-center text-violet-100 sm:col-span-2">目前還沒有人持有紅色或金色造型。</div> : players.map((p) => { const inv = normalizeInventory(p.inventory); return <motion.div key={p.id} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border border-white/15 bg-white/10 p-4"><div className="text-xl font-black">{p.name}</div><div className="mt-2 flex gap-2 text-sm"><span className="rounded-xl bg-yellow-300/20 px-3 py-1 text-yellow-100">金色 × {inv.gold}</span><span className="rounded-xl bg-rose-400/20 px-3 py-1 text-rose-100">紅色 × {inv.red}</span></div><div className="mt-2 text-sm text-violet-100">社交分數：{calculateSocialScore(inv)}</div></motion.div>; })}</div></CardContent></Card>;
+  return <Card className="phone-card rounded-[2rem] border border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-4 sm:p-6"><div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-rose-400/20 p-3"><Flame className="h-6 w-6 text-rose-200" /></div><div><h2 className="text-2xl font-black">高社交價值展示牆</h2><p className="text-sm text-violet-100">請持有金色或紅色造型的玩家在大家面前展示。</p></div></div><div className="grid gap-3 sm:grid-cols-2">{players.length === 0 ? <div className="rounded-2xl border border-dashed border-white/20 p-5 text-center text-violet-100 sm:col-span-2">目前還沒有人持有紅色或金色造型。</div> : players.map((p) => { const inv = normalizeInventory(p.inventory); return <motion.div key={p.id} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border border-white/15 bg-white/10 p-4"><div className="text-xl font-black">{p.name}</div><div className="mt-2 flex gap-2 text-sm"><span className="rounded-xl bg-yellow-300/20 px-3 py-1 text-yellow-100">金色 × {inv.gold}</span><span className="rounded-xl bg-rose-400/20 px-3 py-1 text-rose-100">紅色 × {inv.red}</span></div><div className="mt-2 text-sm text-violet-100">社交分數：{calculateSocialScore(inv)}</div></motion.div>; })}</div></CardContent></Card>;
 }
 
 function RarityTotalCard({ rarity, count }) {
