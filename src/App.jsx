@@ -6,6 +6,7 @@ import {
   Crown,
   Flame,
   Gem,
+  Gift,
   History,
   Lock,
   Medal,
@@ -429,8 +430,8 @@ function PlayerPage() {
       updatedAt: serverTimestamp(),
     });
 
-    for (let i = 0; i < 48; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 10 + i * 2.5));
+    for (let i = 0; i < 34; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 42 + i * 7));
       setReelItems(randomReel());
     }
 
@@ -819,7 +820,7 @@ function SkinCase({ reelItems, isOpening, result, nearMiss }) {
               key={`${item.id}-${index}-${isOpening}`}
               initial={{ x: -70, opacity: 0, scale: 0.8 }}
               animate={{ x: 0, opacity: isCenter ? 1 : 0.35 + Math.max(0, 3 - distance) * 0.12, scale: isCenter ? 1.14 : 0.88 }}
-              transition={{ type: "spring", stiffness: 220, damping: 28, mass: 0.7 }}
+              transition={{ type: "spring", stiffness: 170, damping: 26, mass: 0.9 }}
               className={cx(
                 "relative flex aspect-[0.75] min-h-24 flex-col items-center justify-center overflow-hidden rounded-[1.2rem] border text-2xl shadow-2xl sm:min-h-32 sm:text-4xl",
                 item.bg,
