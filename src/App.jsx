@@ -431,8 +431,8 @@ function PlayerPage() {
     });
 
     for (let i = 0; i < 34; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 42 + i * 7));
-      setReelItems(randomReel());
+      await new Promise((resolve) => setTimeout(resolve, 55 + i * 8));
+      setReelItems((prev) => [...prev.slice(1), weightedRandomRarity()]);
     }
 
     const finalReel = finalReelFor(finalRarity, isNearMiss);
@@ -817,9 +817,9 @@ function SkinCase({ reelItems, isOpening, result, nearMiss }) {
           const distance = Math.abs(index - CENTER_INDEX);
           return (
             <motion.div
-              key={`${item.id}-${index}-${isOpening}`}
-              initial={{ x: -70, opacity: 0, scale: 0.8 }}
-              animate={{ x: 0, opacity: isCenter ? 1 : 0.35 + Math.max(0, 3 - distance) * 0.12, scale: isCenter ? 1.14 : 0.88 }}
+              key={index}
+              initial={false}
+              animate={{ x: 0, opacity: isCenter ? 1 : 0.5 + Math.max(0, 3 - distance) * 0.1, scale: isCenter ? 1.14 : 0.9 }}
               transition={{ type: "spring", stiffness: 170, damping: 26, mass: 0.9 }}
               className={cx(
                 "relative flex aspect-[0.75] min-h-24 flex-col items-center justify-center overflow-hidden rounded-[1.2rem] border text-2xl shadow-2xl sm:min-h-32 sm:text-4xl",
