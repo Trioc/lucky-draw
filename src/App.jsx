@@ -96,6 +96,12 @@ const BONUS_COINS = 60;
 const FREE_CASE_EVERY = 5;
 const HISTORY_LIMIT = 30;
 const CENTER_INDEX = 4;
+const REEL_ITEM_WIDTH = 104;
+const REEL_GAP = 8;
+const REEL_STEP = REEL_ITEM_WIDTH + REEL_GAP;
+const REEL_FINAL_INDEX = 36;
+const REEL_TRACK_LENGTH = 48;
+const REEL_SPIN_DURATION = 4.2;
 
 const RARITIES = {
   white: {
@@ -206,16 +212,20 @@ function randomReel() {
   return Array.from({ length: 9 }, () => weightedRandomRarity());
 }
 
-function finalReelFor(finalRarity, nearMiss) {
-  const reel = randomReel();
-  reel[CENTER_INDEX] = finalRarity;
+function createOpeningTrack(finalRarity, nearMiss) {
+  const track = Array.from({ length: REEL_TRACK_LENGTH }, () => weightedRandomRarity());
+  track[REEL_FINAL_INDEX] = finalRarity;
 
   if (nearMiss && finalRarity.id !== "gold") {
-    reel[CENTER_INDEX - 1] = RARITIES.gold;
-    reel[CENTER_INDEX + 1] = finalRarity.id === "red" ? RARITIES.gold : RARITIES.red;
+    track[REEL_FINAL_INDEX - 1] = RARITIES.gold;
+    track[REEL_FINAL_INDEX + 1] = finalRarity.id === "red" ? RARITIES.gold : RARITIES.red;
   }
 
-  return reel;
+  return track;
+}
+
+function finalTrackX() {
+  return -(REEL_FINAL_INDEX - CENTER_INDEX) * REEL_STEP;
 }
 
 function createId() {
@@ -327,6 +337,8 @@ function PlayerPage() {
   const [result, setResult] = useState(null);
   const [nearMiss, setNearMiss] = useState(false);
   const [reelItems, setReelItems] = useState(randomReel);
+  const [reelX, setReelX] = useState(0);
+  const [reelShouldAnimate, setReelShouldAnimate] = useState(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -396,6 +408,8 @@ function PlayerPage() {
     setResult(null);
     setNearMiss(false);
     setReelItems(randomReel());
+    setReelShouldAnimate(false);
+    setReelX(0);
     setToast("已清除這台裝置的玩家登入。Firebase 內資料仍保留給管理員統計。 ");
   }
 
@@ -407,6 +421,7 @@ function PlayerPage() {
     if (isFreeCase && freeTickets <= 0) return setToast("目前沒有免費開箱券。 ");
 
     setIsOpening(true);
+    setReelShouldAnimate(false);
     setResult(null);
     setNearMiss(false);
     setToast("");
@@ -430,12 +445,14 @@ function PlayerPage() {
       updatedAt: serverTimestamp(),
     });
 
-    for (let i = 0; i < 34; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 55 + i * 8));
-      setReelItems((prev) => [...prev.slice(1), weightedRandomRarity()]);
-    }
-
-    const finalReel = finalReelFor(finalRarity, isNearMiss);
+    const openingTrack = createOpeningTrack(finalRarity, isNearMiss);
+    setReelItems(openingTrack);
+    setReelShouldAnimate(false);
+    setReelX(0);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    setReelShouldAnimate(true);
+    setReelX(finalTrackX());
+    await new Promise((resolve) => setTimeout(resolve, REEL_SPIN_DURATION * 1000 + 250));
     const currentInventory = normalizeInventory(player.inventory);
     const nextInventory = {
       ...currentInventory,
@@ -466,7 +483,7 @@ function PlayerPage() {
       updatedAt: serverTimestamp(),
     });
 
-    setReelItems(finalReel);
+    setReelShouldAnimate(false);
     setResult(finalRarity);
     setNearMiss(isNearMiss);
     setIsOpening(false);
@@ -580,7 +597,7 @@ function PlayerPage() {
               </div>
             </div>
 
-            <SkinCase reelItems={reelItems} isOpening={isOpening} result={result} nearMiss={nearMiss} />
+            <SkinCase reelItems={reelItems} reelX={reelX} reelShouldAnimate={reelShouldAnimate} isOpening={isOpening} result={result} nearMiss={nearMiss} />
 
             <div className="mt-5 space-y-4">
               <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
@@ -619,12 +636,14 @@ function PlayerPage() {
             </div>
 
             <ResultSummary result={result} isOpening={isOpening} />
+            <div className="mt-4">
+              <PlayerStatsCard player={player} inventory={inventory} inventoryValue={inventoryValue} socialScore={socialScore} />
+            </div>
           </motion.div>
         )}
       </div>
 
       <div className="space-y-4">
-        <PlayerStatsCard player={player} inventory={inventory} inventoryValue={inventoryValue} socialScore={socialScore} />
         <InventoryCard inventory={inventory} sellOne={sellOne} sellAllLowValue={sellAllLowValue} hasSellableItems={hasSellableItems} />
         <HistoryCard history={player?.history || []} />
         <a href="#admin" className="block rounded-2xl border border-white/15 bg-white/10 p-4 text-center text-sm text-violet-100 backdrop-blur-xl hover:bg-white/15">前往管理員統計頁</a>
@@ -779,8 +798,8 @@ function HeroCard({ coins, socialScore }) {
     <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-[2rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm text-violet-100"><Sparkles className="h-4 w-4" />SkinBox Social Simulator</div>
-          <h1 className="text-3xl font-black tracking-tight sm:text-5xl">造型開箱心理實驗</h1>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-sm text-violet-100"><Sparkles className="h-4 w-4" />SkinBox Simulator</div>
+          <h1 className="text-3xl font-black tracking-tight sm:text-5xl">造型開箱模擬器</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-violet-100 sm:text-base">抽造型、賣低價物、保留高社交價值造型。最後社交分數最高者獲勝。</p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -792,7 +811,7 @@ function HeroCard({ coins, socialScore }) {
   );
 }
 
-function SkinCase({ reelItems, isOpening, result, nearMiss }) {
+function SkinCase({ reelItems, reelX, reelShouldAnimate, isOpening, result, nearMiss }) {
   const focus = result || reelItems[CENTER_INDEX] || RARITIES.white;
 
   return (
@@ -804,41 +823,52 @@ function SkinCase({ reelItems, isOpening, result, nearMiss }) {
       <div className="relative z-20 mb-4 flex items-center justify-between gap-3">
         <div>
           <div className="text-sm font-bold text-violet-100">SkinBox Case Opening</div>
-          <div className="text-xs text-violet-200">造型由左至右轉動，只有停在中間線上的造型會獲得。</div>
+          <div className="text-xs text-violet-200">造型軌道由右往左滑動，只有停在中間線上的造型會被獲得。</div>
         </div>
         <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-yellow-100">
-          {isOpening ? "轉動中..." : result ? `獲得 ${result.colorName}` : "等待開箱"}
+          {isOpening ? "滑動中..." : result ? `獲得 ${result.colorName}` : "等待開箱"}
         </div>
       </div>
 
-      <div className="relative z-20 grid grid-cols-9 gap-2">
-        {reelItems.map((item, index) => {
-          const isCenter = index === CENTER_INDEX;
-          const distance = Math.abs(index - CENTER_INDEX);
-          return (
-            <motion.div
-              key={index}
-              initial={false}
-              animate={{ x: 0, opacity: isCenter ? 1 : 0.5 + Math.max(0, 3 - distance) * 0.1, scale: isCenter ? 1.14 : 0.9 }}
-              transition={{ type: "spring", stiffness: 170, damping: 26, mass: 0.9 }}
-              className={cx(
-                "relative flex aspect-[0.75] min-h-24 flex-col items-center justify-center overflow-hidden rounded-[1.2rem] border text-2xl shadow-2xl sm:min-h-32 sm:text-4xl",
-                item.bg,
-                item.text,
-                item.border,
-                item.glow,
-                isCenter ? "z-20 ring-4 ring-yellow-300/80" : ""
-              )}
-            >
-              {isCenter && <motion.div className="absolute inset-0 bg-white/20" animate={{ opacity: [0.15, 0.45, 0.15] }} transition={{ duration: 0.7, repeat: Infinity }} />}
-              {item.id === "gold" && <motion.div className="absolute inset-0 bg-gradient-to-br from-white/60 via-yellow-200/10 to-transparent" animate={{ x: ["-100%", "120%"] }} transition={{ duration: 1.2, repeat: Infinity }} />}
-              {item.id === "red" && <motion.div className="absolute inset-0 bg-rose-300/20" animate={{ opacity: [0.12, 0.45, 0.12] }} transition={{ duration: 0.7, repeat: Infinity }} />}
-              <span className="relative drop-shadow-lg">{item.emoji}</span>
-              <span className="relative mt-2 text-[10px] font-black sm:text-xs">{item.shortName}</span>
-              {isCenter && <span className="relative mt-1 rounded-full bg-black/20 px-2 py-0.5 text-[10px] font-bold">獲得</span>}
-            </motion.div>
-          );
-        })}
+      <div className="relative z-20 mx-auto max-w-[1000px] overflow-hidden px-1 py-4">
+        <motion.div
+          className="flex items-center"
+          style={{ gap: REEL_GAP }}
+          animate={{ x: reelX }}
+          transition={reelShouldAnimate ? { duration: REEL_SPIN_DURATION, ease: [0.18, 0.02, 0.18, 1] } : { duration: 0 }}
+        >
+          {reelItems.map((item, index) => {
+            const isWinningSlot = !isOpening && result && index === REEL_FINAL_INDEX;
+            const isCurrentCenter = !isOpening && (index === REEL_FINAL_INDEX || index === CENTER_INDEX);
+            const distance = Math.abs(index - REEL_FINAL_INDEX);
+            const opacity = isOpening ? 0.95 : distance <= 1 ? 1 : distance <= 3 ? 0.78 : 0.55;
+            const scale = isWinningSlot ? 1.14 : isOpening ? 0.95 : distance === 1 ? 0.98 : 0.88;
+
+            return (
+              <motion.div
+                key={`${index}-${item.id}`}
+                animate={{ opacity, scale }}
+                transition={{ duration: 0.25 }}
+                className={cx(
+                  "relative flex aspect-[0.75] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[1.2rem] border text-2xl shadow-2xl sm:text-4xl",
+                  item.bg,
+                  item.text,
+                  item.border,
+                  item.glow,
+                  isWinningSlot || isCurrentCenter ? "z-20 ring-4 ring-yellow-300/80" : ""
+                )}
+                style={{ width: REEL_ITEM_WIDTH }}
+              >
+                {(isWinningSlot || isCurrentCenter) && <motion.div className="absolute inset-0 bg-white/20" animate={{ opacity: [0.15, 0.45, 0.15] }} transition={{ duration: 0.7, repeat: Infinity }} />}
+                {item.id === "gold" && <motion.div className="absolute inset-0 bg-gradient-to-br from-white/60 via-yellow-200/10 to-transparent" animate={{ x: ["-100%", "120%"] }} transition={{ duration: 1.2, repeat: Infinity }} />}
+                {item.id === "red" && <motion.div className="absolute inset-0 bg-rose-300/20" animate={{ opacity: [0.12, 0.45, 0.12] }} transition={{ duration: 0.7, repeat: Infinity }} />}
+                <span className="relative drop-shadow-lg">{item.emoji}</span>
+                <span className="relative mt-2 text-[10px] font-black sm:text-xs">{item.shortName}</span>
+                {(isWinningSlot || isCurrentCenter) && <span className="relative mt-1 rounded-full bg-black/20 px-2 py-0.5 text-[10px] font-bold">獲得</span>}
+              </motion.div>
+            );
+          })}
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -890,7 +920,62 @@ function PlayerStatsCard({ player, inventory, inventoryValue, socialScore }) {
 
 function InventoryCard({ inventory, sellOne, sellAllLowValue, hasSellableItems }) {
   return (
-    <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl"><CardContent className="p-6"><div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="rounded-2xl bg-white/15 p-3"><Gem className="h-6 w-6" /></div><div><h2 className="text-xl font-black">造型庫存</h2><p className="text-sm text-violet-100">出售造型會拿回金幣，但會失去該造型的社交分數。</p></div></div><Button onClick={sellAllLowValue} disabled={!hasSellableItems} variant="secondary" className="rounded-2xl text-sm">賣白藍紫</Button></div><div className="grid gap-3 sm:grid-cols-5">{rarityList.map((rarity) => <div key={rarity.id} className={cx("rounded-2xl border p-3 text-center shadow-xl", rarity.border, rarity.id === "gold" ? "bg-yellow-300/15" : "bg-white/10")}><div className="text-3xl">{rarity.emoji}</div><div className="mt-1 font-black">{rarity.shortName} × {inventory[rarity.id] || 0}</div><div className="text-xs text-violet-100">{rarity.sellable ? `售價 ${rarity.sellPrice}` : "有價無市"}</div><div className="text-xs font-bold text-cyan-100">社交 +{rarity.socialValue}</div><Button onClick={() => sellOne(rarity.id)} disabled={!rarity.sellable || (inventory[rarity.id] || 0) <= 0} variant={rarity.id === "red" ? "destructive" : "ghost"} className="mt-2 w-full rounded-xl px-2 py-1 text-xs">{rarity.sellable ? "賣出 1 個" : "展示"}</Button></div>)}</div></CardContent></Card>
+    <Card className="rounded-[2rem] border-white/15 bg-white/10 text-white shadow-2xl backdrop-blur-xl">
+      <CardContent className="p-6">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="shrink-0 rounded-2xl bg-white/15 p-3">
+            <Gem className="h-6 w-6" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-xl font-black">造型庫存</h2>
+            <p className="text-sm leading-5 text-violet-100">
+              出售造型會拿回金幣，但會失去該造型的社交分數。
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {rarityList.map((rarity) => {
+            const count = inventory[rarity.id] || 0;
+            return (
+              <div
+                key={rarity.id}
+                className={cx(
+                  "flex items-center gap-3 rounded-2xl border p-3 shadow-xl",
+                  rarity.border,
+                  rarity.id === "gold" ? "bg-yellow-300/15" : "bg-white/10"
+                )}
+              >
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-3xl">
+                  {rarity.emoji}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="whitespace-nowrap text-lg font-black">{rarity.shortName} × {count}</span>
+                    <span className="whitespace-nowrap rounded-full bg-white/10 px-2 py-0.5 text-xs font-bold text-cyan-100">
+                      社交 +{rarity.socialValue}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-violet-100">
+                    {rarity.sellable ? `市場回收價 ${rarity.sellPrice} 金幣` : "有價無市，不可出售，只能展示"}
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => sellOne(rarity.id)}
+                  disabled={!rarity.sellable || count <= 0}
+                  variant={rarity.id === "red" ? "destructive" : "ghost"}
+                  className="shrink-0 rounded-xl px-3 py-2 text-xs whitespace-nowrap"
+                >
+                  {rarity.sellable ? "賣出" : "展示"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
